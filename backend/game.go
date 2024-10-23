@@ -62,6 +62,12 @@ func (g *Game) InitializeBoard() error {
 }
 
 func (g *Game) MovePiece(from, to Position) error {
+	// 1. Validate move
+	// 2. Update piece position in map
+	// 3. Update bitboards
+	// 4. Handle captures
+	// 5. Switch turns
+
 	piece, exists := g.Board.Pieces[from]
 
 	if !exists {
@@ -94,36 +100,48 @@ func (g *Game) MovePiece(from, to Position) error {
 }
 
 func (g *Game) IsValidMove(from, to Position) bool {
+	// 1. Check board boundaries
+	// 2. Check piece ownership
+	// 3. Validate based on piece type
+	// 4. Check path obstruction
+	// 5. Check destination
 
-  if !g.IsWithinBounds(from) || !g.IsWithinBounds(to) {
-    return false
-  }
-  
-  if destinationPiece, exists := g.Board.Pieces[to]; exists && destinationPiece.Player == g.CurrentTurn {
-    return false
-  }
+	if !g.IsWithinBounds(from) || !g.IsWithinBounds(to) {
+		return false
+	}
+
+	if destinationPiece, exists := g.Board.Pieces[to]; exists && destinationPiece.Player == g.CurrentTurn {
+		return false
+	}
 
 	piece, exists := g.Board.Pieces[from]
 	if exists {
 		dx := abs(to.X - from.X)
 		dy := abs(to.Y - from.Y)
-	  switch piece.Type {
-      case Pawn:
-          return dx <= 1 && dy <= 1 && (dx + dy == 1)
-      case Hero1:
-          return (dx == 2 && dy == 0) || (dx == 0 && dy == 2)
-      case Hero3:
-          return (dx == 2 && dy == 2)
-      default:
-        return false
-    }
-  }
+		switch piece.Type {
+		case Pawn:
+      // One step orthogonal
+			return dx <= 1 && dy <= 1 && (dx+dy == 1)
+		case Hero1:
+      // Two steps orthogonal
+			return (dx == 2 && dy == 0) || (dx == 0 && dy == 2)
+		case Hero2:
+      // Two steps diagonal
+			return (dx == 2 && dy == 2)
+    case Hero3:
+      // Two steps orthogonal and one step 90 degrees. FL, FR, BL, BR, LF, RF, LB, RB
+      return (dx == 2 && dy == 1) || (dx == 1 && dy == 2)
 
-  return false
+		default:
+			return false
+		}
+	}
+
+	return false
 }
 
-func (g * Game) IsWithinBounds(position Position) bool {
-  return position.X >= 0 && position.X < g.Board.Size && position.Y >= 0 && position.Y < g.Board.Size
+func (g *Game) IsWithinBounds(position Position) bool {
+	return position.X >= 0 && position.X < g.Board.Size && position.Y >= 0 && position.Y < g.Board.Size
 }
 
 func abs(x int) int {
@@ -174,6 +192,7 @@ func (g *Game) appendMoveToHistory(from, to Position) {
 }
 
 func (g *Game) IsGameOver() (bool, Player) {
+	// Use bitboards to check if any player has no pieces left
 	if g.Board.Player1Pieces == 0 {
 		return true, g.Players[1]
 	}
@@ -186,11 +205,11 @@ func (g *Game) IsGameOver() (bool, Player) {
 }
 
 func (g *Game) DrawBoard() {
-  fmt.Println("\nCurrent Board:")
-	fmt.Println("   0  1  2  3  4")  // column numbers
-	
+	fmt.Println("\nCurrent Board:")
+	fmt.Println("   0  1  2  3  4") // column numbers
+
 	for x := 0; x < g.Board.Size; x++ {
-		fmt.Printf("%d ", x)  // row numbers
+		fmt.Printf("%d ", x) // row numbers
 		for y := 0; y < g.Board.Size; y++ {
 			pos := Position{X: x, Y: y}
 			if piece, exists := g.Board.Pieces[pos]; exists {
@@ -198,7 +217,7 @@ func (g *Game) DrawBoard() {
 				if piece.Player == Player2Turn {
 					color = Red
 				}
-				
+
 				pieceStr := "P "
 				switch piece.Type {
 				case Hero1:
@@ -206,7 +225,7 @@ func (g *Game) DrawBoard() {
 				case Hero2:
 					pieceStr = "H2"
 				}
-				
+
 				fmt.Printf("%s[%s]%s", color, pieceStr, Reset)
 			} else {
 				fmt.Print("[  ]")
